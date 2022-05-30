@@ -69,11 +69,13 @@ const (
 	sinkKey         = "sink"
 	stepKeyPrefix   = "step-"
 	errorHandlerKey = "error-handler"
+	completionHandlerKey = "completion-handler"
 )
 
 type bindCmdOptions struct {
 	*RootCmdOptions
 	ErrorHandler string   `mapstructure:"error-handler" yaml:",omitempty"`
+	CompletionHandler string   `mapstructure:"completion-handler" yaml:",omitempty"`
 	Name         string   `mapstructure:"name" yaml:",omitempty"`
 	Connects     []string `mapstructure:"connects" yaml:",omitempty"`
 	OutputFormat string   `mapstructure:"output" yaml:",omitempty"`
@@ -154,6 +156,7 @@ func (o *bindCmdOptions) validate(cmd *cobra.Command, args []string) error {
 }
 
 func (o *bindCmdOptions) run(cmd *cobra.Command, args []string) error {
+	fmt.Println("bind.go::run!!!()")
 	client, err := o.GetCmdClient()
 	if err != nil {
 		return err
@@ -191,6 +194,14 @@ func (o *bindCmdOptions) run(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	if o.CompletionHandler != "" {
+		if completionHandler, err := o.parseCompletionHandler(); err == nil {
+			binding.Spec.CompletionHandler = completionHandler
+		} else {
+			return err
+		}
+	}
+
 	if len(o.Steps) > 0 {
 		binding.Spec.Steps = make([]v1alpha1.Endpoint, 0)
 		for idx, stepDesc := range o.Steps {
@@ -216,6 +227,10 @@ func (o *bindCmdOptions) run(cmd *cobra.Command, args []string) error {
 		}
 		binding.Spec.Integration.Traits = traits
 	}
+
+	fmt.Println("Do we have a completion handler here?")
+	fmt.Println(o.CompletionHandler)
+	fmt.Println("Continue then")
 
 	if o.OutputFormat != "" {
 		return showOutput(cmd, &binding, o.OutputFormat, client.GetScheme())
@@ -277,6 +292,7 @@ func (o *bindCmdOptions) parseErrorHandler() (*v1alpha1.ErrorHandlerSpec, error)
 }
 
 func parseErrorHandlerByType(value string) (string, string, error) {
+    print("parseCompletionHandlerByType()")
 	errHandlSplit := strings.SplitN(value, ":", 2)
 	if (errHandlSplit[0] == "sink") && len(errHandlSplit) != 2 {
 		return "", "", fmt.Errorf("invalid error handler syntax. Type %s needs a configuration (ie %s:value)",
@@ -286,6 +302,42 @@ func parseErrorHandlerByType(value string) (string, string, error) {
 		return errHandlSplit[0], errHandlSplit[1], nil
 	}
 	return errHandlSplit[0], "", nil
+}
+
+func (o *bindCmdOptions) parseCompletionHandler() (*v1alpha1.CompletionHandlerSpec, error) {
+    print("parseCompletionHandler()")
+
+	handlMap := make(map[string]interface{})
+	_, handlValue, err := parseCompletionHandlerByType(o.CompletionHandler)
+	if err != nil {
+		return nil, err
+	}
+
+	sinkSpec, err := o.decode(handlValue, completionHandlerKey)
+	if err != nil {
+		return nil, err
+	}
+	handlMap["sink"] = map[string]interface{}{
+		"endpoint": sinkSpec,
+	}
+
+	handlMarshalled, err := json.Marshal(&handlMap)
+	if err != nil {
+		return nil, err
+	}
+	return &v1alpha1.CompletionHandlerSpec{RawMessage: handlMarshalled}, nil
+}
+
+func parseCompletionHandlerByType(value string) (string, string, error) {
+	handlSplit := strings.SplitN(value, ":", 2)
+	if (handlSplit[0] == "sink") && len(handlSplit) != 2 {
+		return "", "", fmt.Errorf("invalid error handler syntax. Type %s needs a configuration (ie %s:value)",
+			handlSplit[0], handlSplit[0])
+	}
+	if len(handlSplit) > 1 {
+		return handlSplit[0], handlSplit[1], nil
+	}
+	return handlSplit[0], "", nil
 }
 
 func (o *bindCmdOptions) decode(res string, key string) (v1alpha1.Endpoint, error) {
@@ -392,10 +444,13 @@ func (o *bindCmdOptions) parseProperty(prop string) (string, string, string, err
 	isSource := keyParts[0] == sourceKey
 	isSink := keyParts[0] == sinkKey
 	isErrorHandler := keyParts[0] == errorHandlerKey
+	isCompletionHandler := keyParts[0] == completionHandlerKey
 	isStep := strings.HasPrefix(keyParts[0], stepKeyPrefix)
-	if !isSource && !isSink && !isStep && !isErrorHandler {
-		return "", "", "", fmt.Errorf(`property key %q does not start with "source.", "sink.", "error-handler." or "step-<n>."`, parts[0])
+	if !isSource && !isSink && !isStep && !isErrorHandler && !isCompletionHandler {
+		return "", "", "", fmt.Errorf(`property key %q does not start with "source.", "sink.", "error-handler.", "completion-handler." or "step-<n>."`, parts[0])
 	}
+	fmt.Println("Found key ")
+	fmt.Println(keyParts[0])
 	return keyParts[0], keyParts[1], parts[1], nil
 }
 

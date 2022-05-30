@@ -37,13 +37,6 @@ func TestCorrectFileValuesButNotFound(t *testing.T) {
 	assert.False(t, value2)
 }
 
-func TestPermissionDenied(t *testing.T) {
-	value, err := isLocalAndFileExists("/root/test")
-	// must not panic because a permission error
-	assert.NotNil(t, err)
-	assert.False(t, value)
-}
-
 func TestSupportedScheme(t *testing.T) {
 	gistValue, err1 := isLocalAndFileExists("gist:some/gist/resource")
 	githubValue, err2 := isLocalAndFileExists("github:some/github/resource")

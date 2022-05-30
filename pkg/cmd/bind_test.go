@@ -20,6 +20,8 @@ package cmd
 import (
 	"testing"
 
+     "fmt"
+
 	"github.com/apache/camel-k/pkg/util/test"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
@@ -48,6 +50,8 @@ func addTestBindCmd(options RootCmdOptions, rootCmd *cobra.Command) *bindCmdOpti
 
 func TestBindOutputJSON(t *testing.T) {
 	buildCmdOptions, bindCmd, _ := initializeBindCmdOptions(t)
+
+	fmt.Println("TestBindOutputJSON()")
 	output, err := test.ExecuteCommand(bindCmd, cmdBind, "my:src", "my:dst", "-o", "json")
 	assert.Equal(t, "json", buildCmdOptions.OutputFormat)
 

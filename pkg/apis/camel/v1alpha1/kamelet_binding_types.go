@@ -45,7 +45,9 @@ type KameletBinding struct {
 	Status KameletBindingStatus `json:"status,omitempty"`
 }
 
-// KameletBindingSpec defines the binding between a source and a sink. It can include custom parameters and additional intermediate steps and error handling.
+// KameletBindingSpec defines the binding between a source and a sink.
+// It can include custom parameters and additional intermediate steps and
+// completion and error handling.
 type KameletBindingSpec struct {
 	// Integration is an optional integration used to specify custom parameters
 	Integration *v1.IntegrationSpec `json:"integration,omitempty"`
@@ -55,6 +57,8 @@ type KameletBindingSpec struct {
 	Sink Endpoint `json:"sink,omitempty"`
 	// ErrorHandler is an optional handler called upon an error occuring in the integration
 	ErrorHandler *ErrorHandlerSpec `json:"errorHandler,omitempty"`
+	// CompletionHandler is an optional handler called upon a completion of the integration
+	CompletionHandler *CompletionHandlerSpec `json:"completionHandler, omitempty"`
 	// Steps contains an optional list of intermediate steps that are executed between the Source and the Sink
 	Steps []Endpoint `json:"steps,omitempty"`
 	// Replicas is the number of desired replicas for the binding
@@ -85,6 +89,8 @@ const (
 	EndpointTypeSink EndpointType = "sink"
 	// EndpointTypeErrorHandler error handler endpoint
 	EndpointTypeErrorHandler EndpointType = "errorHandler"
+	// EndpointTypeCompletionHandler completion handler endpoint
+	EndpointTypeCompletionHandler EndpointType = "completionHandler"
 )
 
 // EndpointProperties is a key/value struct represented as JSON raw to allow numeric/boolean values

@@ -22,6 +22,8 @@ import (
 	"encoding/json"
 	"sort"
 
+	"fmt"
+
 	"github.com/pkg/errors"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -114,6 +116,15 @@ func CreateIntegrationFor(ctx context.Context, c client.Client, kameletbinding *
 		return nil, errors.Wrap(err, "could not determine error handler")
 	}
 
+	fmt.Println("integration::maybeCompletionHandler()")
+    print("Calling maybeCompletionHandler() from integration.go\n")
+	completionHandler, err := maybeCompletionHandler(kameletbinding.Spec.CompletionHandler, bindingContext)
+	fmt.Println(completionHandler)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not determine completion handler")
+	}
+	fmt.Println("end integration::maybeCompletionHandler()")
+
 	steps := make([]*bindings.Binding, 0, len(kameletbinding.Spec.Steps))
 	for idx, step := range kameletbinding.Spec.Steps {
 		position := idx
@@ -152,6 +163,10 @@ func CreateIntegrationFor(ctx context.Context, c client.Client, kameletbinding *
 	}
 
 	if err := configureBinding(&it, errorHandler); err != nil {
+		return nil, err
+	}
+
+	if err := configureBinding(&it, completionHandler); err != nil {
 		return nil, err
 	}
 

@@ -270,6 +270,8 @@ const (
 	SourceTypeTemplate SourceType = "template"
 	// SourceTypeErrorHandler is used to represent an error handler
 	SourceTypeErrorHandler SourceType = "errorHandler"
+	// SourceTypeCompletionHandler is used to represent a completion handler
+	SourceTypeCompletionHandler SourceType = "completionHandler"
 )
 
 // DataSpec represents the way the source is materialized in the running `Pod`
